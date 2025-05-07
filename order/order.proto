@@ -1,0 +1,41 @@
+syntax = "proto3";
+
+package order;
+
+option go_package = "go-courier/proto/orderpb";
+
+service OrderService{
+    rpc CreateOrder(OrderRequest) returns (OrderResponse);
+    rpc GetOrder(GetOrderRequest) returns (Order);
+    rpc ListOrder(Empty) returns (OrderList);
+}
+
+message OrderRequest{
+    int64 sender_id = 1;
+    repeated string items = 2;
+    string address = 3;
+}
+
+message OrderResponse{
+    int64 id = 1;
+    string status = 2;
+}
+
+message GetOrderRequest{
+    int64 id = 1;
+}
+
+message Order{
+    int64 id = 1;
+    int64 sender_id = 2;
+    repeated string items = 3;
+    string address = 4;
+    string status = 5;
+    string created_at = 6;
+}
+
+message OrderList{
+    repeated Order orders = 1;
+}
+
+message Empty{}

@@ -1,0 +1,112 @@
+services:
+  db:
+    image: postgres:17
+    container_name: postgres
+    environment:
+      POSTGRES_DB: go-courier
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: david
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}" ]
+      interval: 5s
+      retries: 5
+
+  auth:
+    build:
+      context: .
+      dockerfile: auth/DockerFile
+    container_name: auth_service
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "8080:8080"
+    environment:
+      DB_USERNAME: postgres
+      DB_PASSWORD: david
+      DB_PORT: 5432
+      DB_HOST: db
+      AUTH_SERVICE_HOST: auth
+    env_file:
+      - .env
+
+  order:
+    build:
+      context: .
+      dockerfile: order/DockerFile
+    container_name: order_service
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "8090:8090"
+    environment:
+      DB_USERNAME: postgres
+      DB_PASSWORD: david
+      DB_PORT: 5432
+      DB_HOST: db
+      ORDER_SERVICE_HOST: order
+    env_file:
+      - .env
+
+  courier:
+    build:
+      context: .
+      dockerfile: courier/DockerFile
+    container_name: courier_service
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "8100:8100"
+    environment:
+      DB_USERNAME: postgres
+      DB_PASSWORD: david
+      DB_PORT: 5432
+      DB_HOST: db
+      COURIER_SERVICE_HOST: courier
+    env_file:
+      - .env
+
+  auth_gateway:
+    build:
+      context: .
+      dockerfile: /gateway/auth/DockerFile
+    container_name: auth_gateway
+    ports:
+      - "8081:8081"
+    environment:
+      AUTH_SERVICE_HOST: auth
+    env_file:
+      - .env
+
+  order_gateway:
+    build:
+      context: .
+      dockerfile: /gateway/order/DockerFile
+    container_name: order_gateway
+    ports:
+      - "8091:8091"
+    environment:
+      ORDER_SERVICE_HOST: order
+    env_file:
+      - .env
+
+  courier_gateway:
+    build:
+      context: .
+      dockerfile: /gateway/courier/DockerFile
+    container_name: courier_gateway
+    ports:
+      - "8101:8101"
+    environment:
+      COURIER_SERVICE_HOST: courier
+    env_file:
+      - .env
+
+volumes:
+  pgdata:

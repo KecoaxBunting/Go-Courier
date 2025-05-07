@@ -1,0 +1,38 @@
+syntax = "proto3";
+
+package courier;
+
+option go_package = "go-courier/proto/courier";
+
+service CourierService{
+    rpc RegisterCourier(CourierRequest) returns (CourierResponse);
+    rpc GetCourier(GetCourierRequest) returns (Courier);
+    rpc ListCourier(Empty) returns (CourierList);
+}
+
+message CourierRequest{
+    string name = 1;
+    string phone_number = 2;
+}
+
+message CourierResponse{
+    string message = 1;
+}
+
+message GetCourierRequest{
+    int64 id = 1;
+}
+
+message Courier{
+    int64 id = 1;
+    string name = 2;
+    string phone_number = 3;
+    bool available = 4;
+    int64 added_by = 5;
+}
+
+message CourierList{
+    repeated Courier couriers = 1;
+}
+
+message Empty{}
