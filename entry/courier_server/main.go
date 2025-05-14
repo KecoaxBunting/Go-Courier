@@ -8,7 +8,7 @@ import (
 
 func main() {
 	_ = godotenv.Load("../../.env")
-	courier.InitDatabase()
-	service := courier.NewCourierService()
+	db := courier.InitDatabase()
+	service := courier.NewCourierService(db)
 	courier.StartGRPCServer(8100, service)
 }

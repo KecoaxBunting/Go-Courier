@@ -2,18 +2,22 @@ syntax = "proto3";
 
 package order;
 
-option go_package = "go-courier/proto/orderpb";
+option go_package = "go-courier/proto/order";
 
 service OrderService{
     rpc CreateOrder(OrderRequest) returns (OrderResponse);
     rpc GetOrder(GetOrderRequest) returns (Order);
-    rpc ListOrder(Empty) returns (OrderList);
+    rpc ListOrder(EmptyOrder) returns (OrderList);
+    rpc UpdateOrder(UpdateOrderRequest) returns (UpdateOrderResponse);
+    rpc DeleteOrder(DeleteOrderRequest) returns (DeleteOrderResponse);
+    rpc SetOrderToComplete(SetOrderRequest) returns (SetOrderResponse);
+    rpc SetOrderToDelivering(SetOrderRequest) returns (SetOrderResponse); 
 }
 
 message OrderRequest{
     int64 sender_id = 1;
     repeated string items = 2;
-    string address = 3;
+    optional string address = 3;
 }
 
 message OrderResponse{
@@ -38,4 +42,30 @@ message OrderList{
     repeated Order orders = 1;
 }
 
-message Empty{}
+message EmptyOrder{}
+
+message UpdateOrderRequest{
+    int64 id = 1;
+    repeated string items = 2;
+    optional string address = 3;
+}
+
+message UpdateOrderResponse{
+    string message = 1;
+}
+
+message DeleteOrderRequest{
+    int64 id = 1;
+}
+
+message DeleteOrderResponse{
+    string message = 1;
+}
+
+message SetOrderRequest{
+    int64 id = 1;
+}
+
+message SetOrderResponse{
+    string message = 1;
+}

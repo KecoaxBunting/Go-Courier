@@ -51,3 +51,8 @@ func GRPCWithAuth(ctx context.Context, token string) context.Context {
 	})
 	return metadata.NewOutgoingContext(ctx, md)
 }
+
+func ForwardMetadata(ctx context.Context) context.Context {
+	md, _ := metadata.FromIncomingContext(ctx)
+	return metadata.NewOutgoingContext(context.Background(), md)
+}

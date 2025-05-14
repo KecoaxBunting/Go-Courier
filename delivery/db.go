@@ -1,4 +1,4 @@
-package courier
+package delivery
 
 import (
 	"fmt"
@@ -23,7 +23,7 @@ func InitDatabase() *gorm.DB {
 		log.Fatalf("Failed to connect to database: %v", err)
 	}
 
-	err = DB.AutoMigrate(&Courier{})
+	err = DB.AutoMigrate(&Delivery{})
 	if err != nil {
 		log.Fatalf("Failed to migrate: %v", err)
 	}

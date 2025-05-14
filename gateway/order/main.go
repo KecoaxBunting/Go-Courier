@@ -34,6 +34,10 @@ func main() {
 
 		protected.GET("/", controller.ListOrder(client))
 
+		protected.PUT("/:orderId", controller.UpdateOrder(client))
+
+		protected.DELETE("/:orderId", controller.DeleteOrder(client))
+
 	}
 	router.Run(":8091")
 }

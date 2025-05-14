@@ -8,7 +8,7 @@ import (
 
 func main() {
 	_ = godotenv.Load("../../.env")
-	order.InitDatabase()
-	service := order.NewOrderService()
+	db := order.InitDatabase()
+	service := order.NewOrderService(db)
 	order.StartGRPCServer(8090, service)
 }

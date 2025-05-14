@@ -14,10 +14,13 @@ import (
 
 type OrderService struct {
 	orderpb.UnimplementedOrderServiceServer
+	*gorm.DB
 }
 
-func NewOrderService() *OrderService {
-	return &OrderService{}
+func NewOrderService(db *gorm.DB) *OrderService {
+	return &OrderService{
+		DB: db,
+	}
 }
 
 func (o *OrderService) CreateOrder(ctx context.Context, req *orderpb.OrderRequest) (*orderpb.OrderResponse, error) {
@@ -26,14 +29,14 @@ func (o *OrderService) CreateOrder(ctx context.Context, req *orderpb.OrderReques
 		return nil, fmt.Errorf("failed to encode JSON")
 	}
 
-	order := Order{
+	var order = Order{
 		SenderId: req.SenderId,
 		Items:    itemsJSON,
-		Address:  req.Address,
+		Address:  *req.Address,
 		Status:   "Pending",
 	}
 
-	err = DB.Create(&order).Error
+	err = o.DB.Create(&order).Error
 	if err != nil {
 		return nil, fmt.Errorf("failed to create new order")
 	}
@@ -50,7 +53,7 @@ func (o *OrderService) GetOrder(ctx context.Context, req *orderpb.GetOrderReques
 		return nil, fmt.Errorf("please login first")
 	}
 	var order = Order{}
-	err := DB.Where("id = ? AND sender_id = ?", req.Id, userId).First(&order).Error
+	err := o.DB.Where("id = ? AND sender_id = ?", req.Id, userId).First(&order).Error
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		return nil, fmt.Errorf("order not found")
 	} else if err != nil {
@@ -73,13 +76,13 @@ func (o *OrderService) GetOrder(ctx context.Context, req *orderpb.GetOrderReques
 	}, nil
 }
 
-func (o *OrderService) ListOrder(ctx context.Context, _ *orderpb.Empty) (*orderpb.OrderList, error) {
+func (o *OrderService) ListOrder(ctx context.Context, _ *orderpb.EmptyOrder) (*orderpb.OrderList, error) {
 	userId, ok := ctx.Value(interceptor.UserIdKey).(int64)
 	if !ok {
 		return nil, fmt.Errorf("please login first")
 	}
 	var orders = []Order{}
-	err := DB.Where("sender_id = ?", userId).Find(&orders).Error
+	err := o.DB.Where("sender_id = ?", userId).Find(&orders).Error
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		return nil, fmt.Errorf("no orders found")
 	} else if err != nil {
@@ -104,4 +107,97 @@ func (o *OrderService) ListOrder(ctx context.Context, _ *orderpb.Empty) (*orderp
 		})
 	}
 	return &orderpb.OrderList{Orders: listOrder}, nil
+}
+
+func (o *OrderService) UpdateOrder(ctx context.Context, req *orderpb.UpdateOrderRequest) (*orderpb.UpdateOrderResponse, error) {
+	userId, ok := ctx.Value(interceptor.UserIdKey).(int64)
+	if !ok {
+		return nil, fmt.Errorf("please login first")
+	}
+	var order = Order{}
+	err := o.DB.Where("id = ? AND sender_id = ?", req.Id, userId).First(&order).Error
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, fmt.Errorf("order not found")
+	} else if err != nil {
+		return nil, fmt.Errorf("failed to get order")
+	} else if order.Status == "Complete" {
+		return nil, fmt.Errorf("can not update completed order")
+	}
+
+	itemsJSON, err := json.Marshal(req.Items)
+	if err != nil {
+		return nil, fmt.Errorf("failed to encode JSON")
+	}
+
+	order.Items = itemsJSON
+	order.Address = *req.Address
+
+	err = o.DB.Updates(&order).Error
+	if err != nil {
+		return nil, fmt.Errorf("failed to update order")
+	}
+
+	return &orderpb.UpdateOrderResponse{
+		Message: "Successfully update order",
+	}, nil
+}
+
+func (o *OrderService) DeleteOrder(ctx context.Context, req *orderpb.DeleteOrderRequest) (*orderpb.DeleteOrderResponse, error) {
+	userId, ok := ctx.Value(interceptor.UserIdKey).(int64)
+	if !ok {
+		return nil, fmt.Errorf("please login first")
+	}
+	err := o.DB.Where("id = ? AND sender_id = ?", req.Id, userId).Delete(&Order{}).Error
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, fmt.Errorf("order not found")
+	} else if err != nil {
+		return nil, fmt.Errorf("failed to delete order")
+	}
+	return &orderpb.DeleteOrderResponse{
+		Message: "Successfully delete order",
+	}, nil
+}
+
+func (o *OrderService) SetOrderToComplete(ctx context.Context, req *orderpb.SetOrderRequest) (*orderpb.SetOrderResponse, error) {
+	userId, ok := ctx.Value(interceptor.UserIdKey).(int64)
+	if !ok {
+		return nil, fmt.Errorf("please login first")
+	}
+	var orderData = Order{}
+	err := o.DB.Where("id = ? AND sender_id = ?", req.Id, userId).First(&orderData).Error
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, fmt.Errorf("order not found")
+	} else if err != nil {
+		return nil, fmt.Errorf("failed to get order")
+	}
+	orderData.Status = "Complete"
+	err = o.DB.Model(&Order{}).Where("id = ?", orderData.Id).Update("status", orderData.Status).Error
+	if err != nil {
+		return nil, fmt.Errorf("failed to set order to complete")
+	}
+	return &orderpb.SetOrderResponse{
+		Message: "Successfully set order to complete",
+	}, nil
+}
+
+func (o *OrderService) SetOrderToDelivering(ctx context.Context, req *orderpb.SetOrderRequest) (*orderpb.SetOrderResponse, error) {
+	userId, ok := ctx.Value(interceptor.UserIdKey).(int64)
+	if !ok {
+		return nil, fmt.Errorf("please login first")
+	}
+	var orderData = Order{}
+	err := o.DB.Where("id = ? AND sender_id = ?", req.Id, userId).First(&orderData).Error
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, fmt.Errorf("order not found")
+	} else if err != nil {
+		return nil, fmt.Errorf("failed to get order")
+	}
+	orderData.Status = "On Delivering"
+	err = o.DB.Model(&Order{}).Where("id = ?", orderData.Id).Update("status", orderData.Status).Error
+	if err != nil {
+		return nil, fmt.Errorf("failed to set order to delivering")
+	}
+	return &orderpb.SetOrderResponse{
+		Message: "Successfully set order to delivering",
+	}, nil
 }

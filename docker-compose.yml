@@ -72,6 +72,28 @@ services:
     env_file:
       - .env
 
+  delivery:
+    build:
+      context: .
+      dockerfile: delivery/DockerFile
+    container_name: delivery_service
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "8110:8110"
+    environment:
+      DB_USERNAME: postgres
+      DB_PASSWORD: david
+      DB_PORT: 5432
+      DB_HOST: db
+      ORDER_SERVICE_HOST: order
+      COURIER_SERVICE_HOST: courier
+      DELIVERY_SERVICE_HOST: delivery
+
+    env_file:
+      - .env
+
   auth_gateway:
     build:
       context: .
@@ -105,6 +127,18 @@ services:
       - "8101:8101"
     environment:
       COURIER_SERVICE_HOST: courier
+    env_file:
+      - .env
+
+  delivery_gateway:
+    build:
+      context: .
+      dockerfile: /gateway/delivery/DockerFile
+    container_name: delivery_gateway
+    ports:
+      - "8111:8111"
+    environment:
+      DELIVERY_SERVICE_HOST: delivery
     env_file:
       - .env
 

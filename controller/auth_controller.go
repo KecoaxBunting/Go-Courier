@@ -11,10 +11,12 @@ import (
 func Register(client authpb.AuthServiceClient) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var req = authpb.RegisterRequest{}
-
 		err := c.ShouldBindJSON(&req)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input"})
+			return
+		} else if req.Username == nil || req.Password == nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Input is required"})
 			return
 		}
 
@@ -40,6 +42,8 @@ func Login(client authpb.AuthServiceClient) gin.HandlerFunc {
 		if err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input"})
 			return
+		} else if req.Username == nil || req.Password == nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Input is required"})
 		}
 
 		res, err := client.Login(context.Background(), &authpb.LoginRequest{
@@ -50,6 +54,7 @@ func Login(client authpb.AuthServiceClient) gin.HandlerFunc {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 			return
 		}
+
 		c.JSON(http.StatusOK, res)
 	}
 }

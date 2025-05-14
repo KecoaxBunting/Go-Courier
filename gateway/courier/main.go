@@ -34,6 +34,12 @@ func main() {
 
 		protected.GET("/", controller.ListCouriers(client))
 
+		protected.PUT("/:courierId", controller.UpdateCourier(client))
+
+		protected.DELETE("/:courierId", controller.DeleteCourier(client))
+
+		protected.PUT("/changeAvailability/:courierId", controller.ChangeAvailability(client))
+
 	}
 	router.Run(":8101")
 }

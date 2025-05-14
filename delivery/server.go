@@ -1,9 +1,9 @@
-package courier
+package delivery
 
 import (
 	"fmt"
 	interceptor "go-courier/interceptor"
-	courierpb "go-courier/proto/courier"
+	deliverypb "go-courier/proto/delivery"
 	"log"
 	"net"
 	"os"
@@ -11,7 +11,7 @@ import (
 	"google.golang.org/grpc"
 )
 
-func StartGRPCServer(port int, CourierService courierpb.CourierServiceServer) {
+func StartGRPCServer(port int, DeliveryService deliverypb.DeliveryServiceServer) {
 	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", port))
 	if err != nil {
 		log.Fatalf("Failed to listen: %v", err)
@@ -20,8 +20,8 @@ func StartGRPCServer(port int, CourierService courierpb.CourierServiceServer) {
 	grpcServer := grpc.NewServer(
 		grpc.UnaryInterceptor(interceptor.AuthInterceptor(os.Getenv("JWT_SECRET_KEY"))),
 	)
-	courierpb.RegisterCourierServiceServer(grpcServer, CourierService)
-	log.Printf("Courier gRPC server running on port %d...", port)
+	deliverypb.RegisterDeliveryServiceServer(grpcServer, DeliveryService)
+	log.Printf("Delivery gRPC server running on port %d...", port)
 
 	err = grpcServer.Serve(lis)
 	if err != nil {

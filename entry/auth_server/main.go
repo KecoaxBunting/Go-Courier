@@ -8,7 +8,7 @@ import (
 
 func main() {
 	_ = godotenv.Load("../../.env")
-	auth.InitDatabase()
-	service := auth.NewAuthService()
+	db := auth.InitDatabase()
+	service := auth.NewAuthService(db)
 	auth.StartGRPCServer(8080, service)
 }

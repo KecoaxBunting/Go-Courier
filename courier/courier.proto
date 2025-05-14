@@ -7,12 +7,15 @@ option go_package = "go-courier/proto/courier";
 service CourierService{
     rpc RegisterCourier(CourierRequest) returns (CourierResponse);
     rpc GetCourier(GetCourierRequest) returns (Courier);
-    rpc ListCourier(Empty) returns (CourierList);
+    rpc ListCourier(EmptyCourier) returns (CourierList);
+    rpc UpdateCourier(UpdateCourierRequest) returns (CourierResponse);
+    rpc DeleteCourier(DeleteCourierRequest) returns (CourierResponse);
+    rpc ChangeAvailability(ChangeAvailabilityCourierRequest) returns (CourierResponse);
 }
 
 message CourierRequest{
-    string name = 1;
-    string phone_number = 2;
+    optional string name = 1;
+    optional string phone_number = 2;
 }
 
 message CourierResponse{
@@ -35,4 +38,18 @@ message CourierList{
     repeated Courier couriers = 1;
 }
 
-message Empty{}
+message EmptyCourier{}
+
+message UpdateCourierRequest{
+    int64 id = 1;
+    optional string name = 2;
+    optional string phone_number = 3;
+}
+
+message DeleteCourierRequest{
+    int64 id = 1;
+}
+
+message ChangeAvailabilityCourierRequest{
+    int64 id = 1;
+}

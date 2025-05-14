@@ -22,11 +22,13 @@ func AuthInterceptor(key string) grpc.UnaryServerInterceptor {
 		}
 
 		md, ok := metadata.FromIncomingContext(ctx)
-		if !ok {
-			return nil, fmt.Errorf("missing metadata")
+		if ok {
+			fmt.Println("Metadata in DeliveryService:", md)
+		} else {
+			fmt.Println("No metadata found in DeliveryService")
 		}
 
-		authHeader := md["authorization"]
+		authHeader := md.Get("authorization")
 		if len(authHeader) == 0 || !strings.HasPrefix(authHeader[0], "Bearer ") {
 			return nil, fmt.Errorf("missing or invalid authorization")
 		}

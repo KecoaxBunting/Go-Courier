@@ -4,9 +4,8 @@ import (
 	"context"
 	"errors"
 	helper "go-courier/helper"
-	courierpb "go-courier/proto/courier"
+	deliverypb "go-courier/proto/delivery"
 	"net/http"
-	"regexp"
 	"strconv"
 	"strings"
 
@@ -14,15 +13,14 @@ import (
 	"gorm.io/gorm"
 )
 
-func RegisterCourier(client courierpb.CourierServiceClient) gin.HandlerFunc {
+func AssignCourier(client deliverypb.DeliveryServiceClient) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		var req = courierpb.CourierRequest{}
-		phoneRegex := regexp.MustCompile(`^(?:\+62|62|0)8[1-9][0-9]{6,9}$`)
-		err := c.BindJSON(&req)
+		var req = deliverypb.DeliveryRequest{}
+		err := c.ShouldBindJSON(&req)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input"})
 			return
-		} else if req.Name == nil || req.PhoneNumber == nil {
+		} else if req.CourierId == nil || req.OrderId == nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "Input is required"})
 			return
 		}
@@ -35,18 +33,10 @@ func RegisterCourier(client courierpb.CourierServiceClient) gin.HandlerFunc {
 
 		ctx := helper.GRPCWithAuth(context.Background(), strings.TrimPrefix(authHeader, "Bearer "))
 
-		match := phoneRegex.MatchString(*req.PhoneNumber)
-
-		if !match {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "invalid phone number format"})
-			return
-		}
-
-		res, err := client.RegisterCourier(ctx, &courierpb.CourierRequest{
-			Name:        req.Name,
-			PhoneNumber: req.PhoneNumber,
+		res, err := client.AssignCourier(ctx, &deliverypb.DeliveryRequest{
+			CourierId: req.CourierId,
+			OrderId:   req.OrderId,
 		})
-
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
@@ -55,9 +45,9 @@ func RegisterCourier(client courierpb.CourierServiceClient) gin.HandlerFunc {
 	}
 }
 
-func GetCourier(client courierpb.CourierServiceClient) gin.HandlerFunc {
+func CompleteOrder(client deliverypb.DeliveryServiceClient) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		param := c.Param("courierId")
+		param := c.Param("deliveryId")
 		id, err := strconv.ParseInt(param, 0, 0)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid Id"})
@@ -72,11 +62,11 @@ func GetCourier(client courierpb.CourierServiceClient) gin.HandlerFunc {
 
 		ctx := helper.GRPCWithAuth(context.Background(), strings.TrimPrefix(authHeader, "Bearer "))
 
-		res, err := client.GetCourier(ctx, &courierpb.GetCourierRequest{Id: id})
+		res, err := client.CompleteOrder(ctx, &deliverypb.CompleteRequest{Id: id})
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
-			return
-		} else if err != nil {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Delivery data not found"})
+		}
+		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}
@@ -84,7 +74,36 @@ func GetCourier(client courierpb.CourierServiceClient) gin.HandlerFunc {
 	}
 }
 
-func ListCouriers(client courierpb.CourierServiceClient) gin.HandlerFunc {
+func GetDelivery(client deliverypb.DeliveryServiceClient) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		param := c.Param("deliveryId")
+		id, err := strconv.ParseInt(param, 0, 0)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid Id"})
+			return
+		}
+
+		authHeader := c.GetHeader("Authorization")
+		if authHeader == "" || !strings.HasPrefix(authHeader, "Bearer ") {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Missing or invalid Authorization header"})
+			return
+		}
+
+		ctx := helper.GRPCWithAuth(context.Background(), strings.TrimPrefix(authHeader, "Bearer "))
+
+		res, err := client.GetDelivery(ctx, &deliverypb.GetDeliveryRequest{Id: id})
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		} else if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+
+		c.JSON(http.StatusOK, res)
+	}
+}
+
+func ListDelivery(client deliverypb.DeliveryServiceClient) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		authHeader := c.GetHeader("Authorization")
 		if authHeader == "" || !strings.HasPrefix(authHeader, "Bearer ") {
@@ -94,10 +113,9 @@ func ListCouriers(client courierpb.CourierServiceClient) gin.HandlerFunc {
 
 		ctx := helper.GRPCWithAuth(context.Background(), strings.TrimPrefix(authHeader, "Bearer "))
 
-		res, err := client.ListCourier(ctx, &courierpb.EmptyCourier{})
+		res, err := client.ListDelivery(ctx, &deliverypb.EmptyDelivery{})
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
-			return
 		} else if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
@@ -106,21 +124,21 @@ func ListCouriers(client courierpb.CourierServiceClient) gin.HandlerFunc {
 	}
 }
 
-func UpdateCourier(client courierpb.CourierServiceClient) gin.HandlerFunc {
+func UpdateDelivery(client deliverypb.DeliveryServiceClient) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		param := c.Param("courierId")
+		param := c.Param("deliveryId")
 		id, err := strconv.ParseInt(param, 0, 0)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid Id"})
 			return
 		}
 
-		var req = courierpb.UpdateCourierRequest{}
+		var req = deliverypb.UpdateDeliveryRequest{}
 		err = c.ShouldBindJSON(&req)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input"})
 			return
-		} else if req.Name == nil || req.PhoneNumber == nil {
+		} else if req.CourierId == nil || req.OrderId == nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "Input is required"})
 			return
 		}
@@ -132,10 +150,10 @@ func UpdateCourier(client courierpb.CourierServiceClient) gin.HandlerFunc {
 		}
 
 		ctx := helper.GRPCWithAuth(context.Background(), strings.TrimPrefix(authHeader, "Bearer "))
-		res, err := client.UpdateCourier(ctx, &courierpb.UpdateCourierRequest{
-			Id:          id,
-			Name:        req.Name,
-			PhoneNumber: req.PhoneNumber,
+		res, err := client.UpdateDelivery(ctx, &deliverypb.UpdateDeliveryRequest{
+			Id:        id,
+			CourierId: req.CourierId,
+			OrderId:   req.CourierId,
 		})
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
@@ -147,9 +165,9 @@ func UpdateCourier(client courierpb.CourierServiceClient) gin.HandlerFunc {
 	}
 }
 
-func DeleteCourier(client courierpb.CourierServiceClient) gin.HandlerFunc {
+func DeleteDelivery(client deliverypb.DeliveryServiceClient) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		param := c.Param("courierId")
+		param := c.Param("deliveryId")
 		id, err := strconv.ParseInt(param, 0, 0)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid Id"})
@@ -163,34 +181,7 @@ func DeleteCourier(client courierpb.CourierServiceClient) gin.HandlerFunc {
 		}
 
 		ctx := helper.GRPCWithAuth(context.Background(), strings.TrimPrefix(authHeader, "Bearer "))
-		res, err := client.DeleteCourier(ctx, &courierpb.DeleteCourierRequest{Id: id})
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
-		} else if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-			return
-		}
-		c.JSON(http.StatusOK, res)
-	}
-}
-
-func ChangeAvailability(client courierpb.CourierServiceClient) gin.HandlerFunc {
-	return func(c *gin.Context) {
-		param := c.Param("courierId")
-		id, err := strconv.ParseInt(param, 0, 0)
-		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid Id"})
-			return
-		}
-
-		authHeader := c.GetHeader("Authorization")
-		if authHeader == "" || !strings.HasPrefix(authHeader, "Bearer ") {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "Missing or invalid Authorization header"})
-			return
-		}
-
-		ctx := helper.GRPCWithAuth(context.Background(), strings.TrimPrefix(authHeader, "Bearer "))
-		res, err := client.ChangeAvailability(ctx, &courierpb.ChangeAvailabilityCourierRequest{Id: id})
+		res, err := client.DeleteDelivery(ctx, &deliverypb.DeleteDeliveryRequest{Id: id})
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
 		} else if err != nil {

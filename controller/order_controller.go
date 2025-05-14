@@ -21,6 +21,9 @@ func CreateOrder(client orderpb.OrderServiceClient) gin.HandlerFunc {
 		if err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input"})
 			return
+		} else if req.Address == nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Input is required"})
+			return
 		}
 
 		userIdRaw, ok := c.Get(string(interceptor.UserIdKey))
@@ -49,7 +52,7 @@ func CreateOrder(client orderpb.OrderServiceClient) gin.HandlerFunc {
 			Address:  req.Address,
 		})
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create order"})
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}
 		c.JSON(http.StatusOK, res)
@@ -95,7 +98,75 @@ func ListOrder(client orderpb.OrderServiceClient) gin.HandlerFunc {
 
 		ctx := helper.GRPCWithAuth(context.Background(), strings.TrimPrefix(authHeader, "Bearer "))
 
-		res, err := client.ListOrder(ctx, &orderpb.Empty{})
+		res, err := client.ListOrder(ctx, &orderpb.EmptyOrder{})
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		} else if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+		c.JSON(http.StatusOK, res)
+	}
+}
+
+func UpdateOrder(client orderpb.OrderServiceClient) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		param := c.Param("orderId")
+		id, err := strconv.ParseInt(param, 0, 0)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid Id"})
+			return
+		}
+
+		var req = orderpb.UpdateOrderRequest{}
+		err = c.ShouldBindJSON(&req)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input"})
+			return
+		} else if req.Address == nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Input is required"})
+			return
+		}
+
+		authHeader := c.GetHeader("Authorization")
+		if authHeader == "" || !strings.HasPrefix(authHeader, "Bearer ") {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Missing or invalid Authorization header"})
+			return
+		}
+
+		ctx := helper.GRPCWithAuth(context.Background(), strings.TrimPrefix(authHeader, "Bearer "))
+		res, err := client.UpdateOrder(ctx, &orderpb.UpdateOrderRequest{
+			Id:      id,
+			Items:   req.Items,
+			Address: req.Address,
+		})
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		} else if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+		c.JSON(http.StatusOK, res)
+	}
+}
+
+func DeleteOrder(client orderpb.OrderServiceClient) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		param := c.Param("orderId")
+		id, err := strconv.ParseInt(param, 0, 0)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid Id"})
+			return
+		}
+
+		authHeader := c.GetHeader("Authorization")
+		if authHeader == "" || !strings.HasPrefix(authHeader, "Bearer ") {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Missing or invalid Authorization header"})
+			return
+		}
+
+		ctx := helper.GRPCWithAuth(context.Background(), strings.TrimPrefix(authHeader, "Bearer "))
+		res, err := client.DeleteOrder(ctx, &orderpb.DeleteOrderRequest{Id: id})
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
 		} else if err != nil {

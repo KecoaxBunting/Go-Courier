@@ -1,0 +1,59 @@
+syntax = "proto3";
+
+package order;
+
+option go_package = "go-courier/proto/deliverypb";
+
+import "courier/courier.proto";
+import "order/order.proto";
+
+service DeliveryService{
+    rpc AssignCourier(DeliveryRequest) returns (DeliveryResponse);
+    rpc CompleteOrder(CompleteRequest) returns (DeliveryResponse);
+    rpc GetDelivery(GetDeliveryRequest) returns (Delivery);
+    rpc ListDelivery(EmptyDelivery) returns (DeliveryList);
+    rpc UpdateDelivery(UpdateDeliveryRequest) returns (DeliveryResponse);
+    rpc DeleteDelivery(DeleteDeliveryRequest) returns (DeliveryResponse);
+}
+
+message DeliveryRequest{
+    optional int64 courierId = 1;
+    optional int64 orderId = 2;
+}
+
+message DeliveryResponse{
+    string message = 1;
+    string status = 2;
+}
+
+message CompleteRequest{
+    int64 id = 1;
+}
+
+message GetDeliveryRequest{
+    int64 id = 1;
+}
+
+message Delivery{
+    int64 id = 1;
+    courier.Courier courier_data = 2;
+    order.Order orderData = 3;
+    string status = 4;
+    int64 added_by = 5;
+}
+
+message DeliveryList{
+    repeated Delivery deliveries = 1;
+}
+
+message UpdateDeliveryRequest{
+    int64 id = 1;
+    optional int64 courierId = 2;
+    optional int64 orderId = 3;
+}
+
+message DeleteDeliveryRequest{
+    int64 id = 1;
+}
+
+message EmptyDelivery{}

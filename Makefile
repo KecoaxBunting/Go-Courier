@@ -21,3 +21,13 @@ genCourier:
 	--go_opt=paths=source_relative \
 	--go-grpc_opt=paths=source_relative \
 	courier\courier.proto
+
+genDelivery:
+	@protoc \
+	--go_out=proto \
+	--go-grpc_out=proto \
+	--go_opt=paths=source_relative \
+	--go-grpc_opt=paths=source_relative \
+	delivery\delivery.proto \
+	order\order.proto \
+	courier\courier.proto

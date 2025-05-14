@@ -7,6 +7,6 @@ RUN go mod download
 
 COPY . .
 
-RUN go build -o gateway ./gateway
+RUN go build -o delivery_gateway ./gateway/delivery
 
-CMD ["./gateway"] 
+CMD [ "./delivery_gateway" ]
