@@ -35,8 +35,6 @@ func main() {
 
 		router.GET("/deliveries/", controller.ListDelivery(client))
 
-		router.PUT("/deliveries/:deliveryId", controller.UpdateDelivery(client))
-
 		router.DELETE("/deliveries/:deliveryId", controller.DeleteDelivery(client))
 
 	}

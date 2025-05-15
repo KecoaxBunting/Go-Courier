@@ -1,4 +1,4 @@
-FROM golang:1.24
+FROM golang:1.24 AS builder
 
 WORKDIR /app
 
@@ -7,6 +7,12 @@ RUN go mod download
 
 COPY . .
 
-RUN go build -o courier_server ./entry/courier_server
+RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o courier_server ./entry/courier_server
 
-CMD ["./courier_server"]
+FROM gcr.io/distroless/static
+
+COPY --from=builder /app/courier_server /courier_server
+
+USER nonroot:nonroot
+
+ENTRYPOINT ["/courier_server"]

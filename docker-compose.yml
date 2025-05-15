@@ -99,6 +99,9 @@ services:
       context: .
       dockerfile: /gateway/auth/DockerFile
     container_name: auth_gateway
+    depends_on:
+      auth:
+        condition: service_started
     ports:
       - "8081:8081"
     environment:
@@ -111,6 +114,9 @@ services:
       context: .
       dockerfile: /gateway/order/DockerFile
     container_name: order_gateway
+    depends_on:
+      order:
+        condition: service_started
     ports:
       - "8091:8091"
     environment:
@@ -123,6 +129,9 @@ services:
       context: .
       dockerfile: /gateway/courier/DockerFile
     container_name: courier_gateway
+    depends_on:
+      courier:
+        condition: service_started
     ports:
       - "8101:8101"
     environment:
@@ -135,6 +144,9 @@ services:
       context: .
       dockerfile: /gateway/delivery/DockerFile
     container_name: delivery_gateway
+    depends_on:
+      delivery:
+        condition: service_started
     ports:
       - "8111:8111"
     environment:
