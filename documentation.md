@@ -23,6 +23,7 @@
   ## 2. Login   
   ``Method: POST``<br>
   ``Route: /login``
+
   **Request Type**: `LoginRequest`
   ```json
     {
@@ -118,7 +119,6 @@
       "message": "string"
     }
   ```
-
 
 # CourierService (port:8101) ##
   ## 1.RegisterCourier
