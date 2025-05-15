@@ -45,7 +45,7 @@
 
 ## Note
 - Sebelum menjalankan server dan gateway, tolong setup .env terlebih dahulu
-- Jangan lupa build proto terlebih dahulu, gunakan command `make [nama_perintah]`
+- Jangan lupa build proto terlebih dahulu, buat folder proto, gunakan command `make [nama_perintah]` (bisa lihat di MakeFile)
 - Jalankan `command docker-compose up --build` untuk uji coba menggunakan docker
 
 **David Adriel Alvyn**
