@@ -122,6 +122,8 @@ func (o *OrderService) UpdateOrder(ctx context.Context, req *orderpb.UpdateOrder
 		return nil, fmt.Errorf("failed to get order")
 	} else if order.Status == "Complete" {
 		return nil, fmt.Errorf("can not update completed order")
+	} else if order.Status == "On Delivering" {
+		return nil, fmt.Errorf("can not update on delivering order")
 	}
 
 	itemsJSON, err := json.Marshal(req.Items)
@@ -147,12 +149,22 @@ func (o *OrderService) DeleteOrder(ctx context.Context, req *orderpb.DeleteOrder
 	if !ok {
 		return nil, fmt.Errorf("please login first")
 	}
-	err := o.DB.Where("id = ? AND sender_id = ?", req.Id, userId).Delete(&Order{}).Error
+
+	var order = Order{}
+	err := o.DB.Where("id = ? AND sender_id = ?", req.Id, userId).First(&order).Error
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		return nil, fmt.Errorf("order not found")
 	} else if err != nil {
+		return nil, fmt.Errorf("failed to get order")
+	} else if order.Status == "On Delivering" {
+		return nil, fmt.Errorf("can not delete on delivering order")
+	}
+
+	err = o.DB.Delete(&order).Error
+	if err != nil {
 		return nil, fmt.Errorf("failed to delete order")
 	}
+
 	return &orderpb.DeleteOrderResponse{
 		Message: "Successfully delete order",
 	}, nil
@@ -163,6 +175,7 @@ func (o *OrderService) SetOrderToComplete(ctx context.Context, req *orderpb.SetO
 	if !ok {
 		return nil, fmt.Errorf("please login first")
 	}
+
 	var orderData = Order{}
 	err := o.DB.Where("id = ? AND sender_id = ?", req.Id, userId).First(&orderData).Error
 	if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -170,11 +183,13 @@ func (o *OrderService) SetOrderToComplete(ctx context.Context, req *orderpb.SetO
 	} else if err != nil {
 		return nil, fmt.Errorf("failed to get order")
 	}
+
 	orderData.Status = "Complete"
 	err = o.DB.Model(&Order{}).Where("id = ?", orderData.Id).Update("status", orderData.Status).Error
 	if err != nil {
 		return nil, fmt.Errorf("failed to set order to complete")
 	}
+
 	return &orderpb.SetOrderResponse{
 		Message: "Successfully set order to complete",
 	}, nil
@@ -185,6 +200,7 @@ func (o *OrderService) SetOrderToDelivering(ctx context.Context, req *orderpb.Se
 	if !ok {
 		return nil, fmt.Errorf("please login first")
 	}
+
 	var orderData = Order{}
 	err := o.DB.Where("id = ? AND sender_id = ?", req.Id, userId).First(&orderData).Error
 	if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -192,11 +208,13 @@ func (o *OrderService) SetOrderToDelivering(ctx context.Context, req *orderpb.Se
 	} else if err != nil {
 		return nil, fmt.Errorf("failed to get order")
 	}
+
 	orderData.Status = "On Delivering"
 	err = o.DB.Model(&Order{}).Where("id = ?", orderData.Id).Update("status", orderData.Status).Error
 	if err != nil {
 		return nil, fmt.Errorf("failed to set order to delivering")
 	}
+
 	return &orderpb.SetOrderResponse{
 		Message: "Successfully set order to delivering",
 	}, nil

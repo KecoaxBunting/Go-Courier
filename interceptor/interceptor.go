@@ -22,10 +22,8 @@ func AuthInterceptor(key string) grpc.UnaryServerInterceptor {
 		}
 
 		md, ok := metadata.FromIncomingContext(ctx)
-		if ok {
-			fmt.Println("Metadata in DeliveryService:", md)
-		} else {
-			fmt.Println("No metadata found in DeliveryService")
+		if !ok {
+			return nil, fmt.Errorf("missing metadata")
 		}
 
 		authHeader := md.Get("authorization")

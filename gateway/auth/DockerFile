@@ -1,4 +1,4 @@
-FROM golang:1.24
+FROM golang:1.24 AS builder
 
 WORKDIR /app
 
@@ -7,6 +7,12 @@ RUN go mod download
 
 COPY . .
 
-RUN go build -o auth_gateway ./gateway/auth
+RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o auth_gateway ./gateway/auth
 
-CMD [ "./auth_gateway" ]
+FROM gcr.io/distroless/static
+
+COPY --from=builder /app/auth_gateway /auth_gateway
+
+USER nonroot:nonroot
+
+ENTRYPOINT ["/auth_gateway"]

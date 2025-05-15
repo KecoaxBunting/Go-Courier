@@ -199,7 +199,7 @@ func (d *DeliveryService) ListDelivery(ctx context.Context, req *deliverypb.Empt
 	}, nil
 }
 
-func (d *DeliveryService) UpdateDelivery(ctx context.Context, req *deliverypb.UpdateDeliveryRequest) (*deliverypb.DeliveryResponse, error) {
+func (d *DeliveryService) DeleteDelivery(ctx context.Context, req *deliverypb.DeleteDeliveryRequest) (*deliverypb.DeliveryResponse, error) {
 	userId, ok := ctx.Value(interceptor.UserIdKey).(int64)
 	if !ok {
 		return nil, fmt.Errorf("please login first")
@@ -210,50 +210,17 @@ func (d *DeliveryService) UpdateDelivery(ctx context.Context, req *deliverypb.Up
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		return nil, fmt.Errorf("delivery data not found")
 	} else if err != nil {
-		return nil, fmt.Errorf("failed to get delivery data")
-	} else if delivery.Status == "Complete" {
-		return nil, fmt.Errorf("can not update completed delivery")
+		return nil, fmt.Errorf("failed to get delovery data")
+	} else if delivery.Status == "On Progress" {
+		return nil, fmt.Errorf("Can not delete on progress delivery")
 	}
 
-	newCtx := helper.ForwardMetadata(ctx)
-
-	_, err = d.CourierServiceClient.GetCourier(newCtx, &courierpb.GetCourierRequest{Id: delivery.CourierId})
+	err = d.DB.Delete(&delivery).Error
 	if err != nil {
-		return nil, err
-	}
-
-	_, err = d.OrderServiceClient.GetOrder(newCtx, &orderpb.GetOrderRequest{Id: delivery.OrderId})
-	if err != nil {
-		return nil, err
-	}
-
-	delivery.CourierId = *req.CourierId
-	delivery.OrderId = *req.OrderId
-
-	err = d.DB.Updates(&delivery).Error
-	if err != nil {
-		return nil, fmt.Errorf("failed to update delivery data")
+		return nil, fmt.Errorf("failed to delete delivery data")
 	}
 
 	return &deliverypb.DeliveryResponse{
-		Message: "Successfully update delivery data",
-	}, nil
-}
-
-func (d *DeliveryService) DeleteDelivery(ctx context.Context, req *deliverypb.DeleteDeliveryRequest) (*deliverypb.DeliveryResponse, error) {
-	userId, ok := ctx.Value(interceptor.UserIdKey).(int64)
-	if !ok {
-		return nil, fmt.Errorf("please login first")
-	}
-
-	err := d.DB.Where("id = ? AND added_by = ?", req.Id, userId).Delete(&Delivery{}).Error
-	if errors.Is(err, gorm.ErrRecordNotFound) {
-		return nil, fmt.Errorf("order not found")
-	} else if err != nil {
-		return nil, fmt.Errorf("failed to delete order")
-	}
-
-	return &deliverypb.DeliveryResponse{
-		Message: "Successfully delete order",
+		Message: "Successfully delete delivery data",
 	}, nil
 }

@@ -124,47 +124,6 @@ func ListDelivery(client deliverypb.DeliveryServiceClient) gin.HandlerFunc {
 	}
 }
 
-func UpdateDelivery(client deliverypb.DeliveryServiceClient) gin.HandlerFunc {
-	return func(c *gin.Context) {
-		param := c.Param("deliveryId")
-		id, err := strconv.ParseInt(param, 0, 0)
-		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid Id"})
-			return
-		}
-
-		var req = deliverypb.UpdateDeliveryRequest{}
-		err = c.ShouldBindJSON(&req)
-		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input"})
-			return
-		} else if req.CourierId == nil || req.OrderId == nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "Input is required"})
-			return
-		}
-
-		authHeader := c.GetHeader("Authorization")
-		if authHeader == "" || !strings.HasPrefix(authHeader, "Bearer ") {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "Missing or invalid Authorization header"})
-			return
-		}
-
-		ctx := helper.GRPCWithAuth(context.Background(), strings.TrimPrefix(authHeader, "Bearer "))
-		res, err := client.UpdateDelivery(ctx, &deliverypb.UpdateDeliveryRequest{
-			Id:        id,
-			CourierId: req.CourierId,
-			OrderId:   req.CourierId,
-		})
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
-		} else if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-			return
-		}
-		c.JSON(http.StatusOK, res)
-	}
-}
-
 func DeleteDelivery(client deliverypb.DeliveryServiceClient) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		param := c.Param("deliveryId")

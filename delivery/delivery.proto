@@ -12,7 +12,6 @@ service DeliveryService{
     rpc CompleteOrder(CompleteRequest) returns (DeliveryResponse);
     rpc GetDelivery(GetDeliveryRequest) returns (Delivery);
     rpc ListDelivery(EmptyDelivery) returns (DeliveryList);
-    rpc UpdateDelivery(UpdateDeliveryRequest) returns (DeliveryResponse);
     rpc DeleteDelivery(DeleteDeliveryRequest) returns (DeliveryResponse);
 }
 
@@ -44,12 +43,6 @@ message Delivery{
 
 message DeliveryList{
     repeated Delivery deliveries = 1;
-}
-
-message UpdateDeliveryRequest{
-    int64 id = 1;
-    optional int64 courierId = 2;
-    optional int64 orderId = 3;
 }
 
 message DeleteDeliveryRequest{
