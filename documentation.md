@@ -1,8 +1,8 @@
-## Go-Courier API Documentation (gRPC)
+# Go-Courier API Documentation (gRPC)
  
-## AuthService (port:8081) ##
-  ## 1.Register ##
-  ``Method: POST``
+# AuthService (port:8081)
+  ## 1.Register 
+  ``Method: POST``<br>
   ``Route: /register`` 
   
   **Request**: `RegisterRequest`
@@ -20,8 +20,8 @@
     } 
   ```
   
-  ## 2. Login ##  
-  ``Method: POST``
+  ## 2. Login   
+  ``Method: POST``<br>
   ``Route: /login``
   **Request Type**: `LoginRequest`
   ```json
@@ -39,9 +39,9 @@
   ```
 
 
-## OrderService (port:8091) ##
-  ## 1.CreateOrder##
-  ``Method: POST``
+# OrderService (port:8091)
+  ## 1.CreateOrder 
+  ``Method: POST``<br>
   ``Route: /orders/``
 
   **Request Type**: `OrderRequest`
@@ -61,8 +61,8 @@
     }
   ```
 
-  ## 2.GetOrder##
-  ``Method: GET``
+  ## 2.GetOrder
+  ``Method: GET``<br>
   ``Route: /orders/{orderId}``
 
   **Response Type**: `Order`
@@ -77,8 +77,8 @@
     }
   ```
 
-  ## 3.ListOrder ##
-  ``Method: GET``
+  ## 3.ListOrder
+  ``Method: GET``<br>
   ``Route: /orders/``
 
   **Response Type**: `OrderList`
@@ -88,8 +88,8 @@
     }
   ```
 
-  ## 4.UpdateOrder ##
-  ``Method: PUT``
+  ## 4.UpdateOrder
+  ``Method: PUT``<br>
   ``Route: /orders/{orderId}``
 
   **Request Type**: `UpdateOrderRequest`
@@ -108,8 +108,8 @@
     }
   ```
 
-  ## 5.DeleteOrder ##
-  ``Method: DELETE``
+  ## 5.DeleteOrder
+  ``Method: DELETE``<br>
   ``Route: /orders/{orderId}``
   
   **Response Type**: `DeleteOrderResponse`
@@ -120,9 +120,9 @@
   ```
 
 
-## CourierService (port:8101) ##
-  ## 1.RegisterCourier ##
-  ``Method: POST``
+# CourierService (port:8101) ##
+  ## 1.RegisterCourier
+  ``Method: POST``<br>
   ``Route: /couriers/``
 
   **Request**: `CourierRequest`
@@ -140,8 +140,8 @@
     }
   ```
 
-  ## 2.GetCourier ##
-  ``Method: GET``
+  ## 2.GetCourier
+  ``Method: GET``<br>
   ``Route: /couriers/{courierId}``
   
   **Response Type**: `Courier`
@@ -155,8 +155,8 @@
     }
   ```
 
-  ## 3.ListCourier ##
-  ``Method: GET``
+  ## 3.ListCourier
+  ``Method: GET``<br>
   ``Route: /couriers/``
   
   **Response Type**: `CourierList`
@@ -166,8 +166,8 @@
     }
   ```
 
-  ## 4.UpdateCourier ##
-  ``Method: PUT``
+  ## 4.UpdateCourier
+  ``Method: PUT``<br>
   ``Route: /couriers/{courierId}``
   
   **Request Type**: `UpdateCourierRequest`
@@ -186,8 +186,8 @@
     }
   ```
 
-  ## 5.DeleteCourier ##
-  ``Method: DELETE``
+  ## 5.DeleteCourier
+  ``Method: DELETE``<br>
   ``Route: /couriers/{courierId}``
   
   **Response Type**: `CourierResponse`
@@ -197,45 +197,28 @@
     }
   ```
 
-| Field | Type | Description |
-|-------|------|-------------|
-| message | string | - |
+  ## 6.ChangeAvailability
+  ``Method: PUT``<br>
+  ``Route: /couriers/changeAvailability/{courierId}``
 
----
+  **Request Type**: `ChangeAvailabilityCourierRequest`
+  ```json
+    {
+      "id": "int64"
+    }
+  ```
 
-### 🔹 RPC: `ChangeAvailability`
+  **Response Type**: `CourierResponse`
+  ```json
+    {
+      "message": "string"
+    }
+  ```
 
-- **Request Type**: `ChangeAvailabilityCourierRequest`
-- **Response Type**: `CourierResponse`
+# DeliveryService (port:8111)
 
-#### 📤 Request
-
-```json
-{
-  "id": "int64"
-}
-```
-
-| Field | Type | Description |
-|-------|------|-------------|
-| id | int64 | - |
-
-#### 📥 Response
-
-```json
-{
-  "message": "string"
-}
-```
-
-| Field | Type | Description |
-|-------|------|-------------|
-| message | string | - |
-
-## DeliveryService (port:8111) ##
-
-  ## 1.AssignCourier ##
-  ``Method: POST``
+  ## 1.AssignCourier
+  ``Method: POST``<br>
   ``Route: /assignCourier/``
 
   **Request Type**: `DeliveryRequest`
@@ -254,8 +237,8 @@
     }
   ```
 
-  ## 2.CompleteOrder ##
-  ``Method: PUT``
+  ## 2.CompleteOrder 
+  ``Method: PUT``<br>
   ``Route: /completeOrder/{deliveryId}``
 
   **Response Type**: `DeliveryResponse`
@@ -266,8 +249,8 @@
     }
   ```
 
-  ## 3.GetDelivery ##
-  ``Method: GET``
+  ## 3.GetDelivery 
+  ``Method: GET``<br>
   ``Route: /deliveries/{deliveryId}``
 
   **Response Type**: `Delivery`
@@ -281,8 +264,8 @@
     }
   ```
 
-  ## 4.ListDelivery ##
-  ``Method: GET``
+  ## 4.ListDelivery 
+  ``Method: GET``<br>
   ``Route: /deliveries/``
 
   **Response Type**: `DeliveryList`
@@ -292,8 +275,8 @@
     }
   ```
 
-  ## 5.DeleteDelivery ##
-  ``Method: DELETE``
+  ## 5.DeleteDelivery
+  ``Method: DELETE``<br>
   ``Route: /deliveries/{deliveryId}``
 
   **Response Type**: `DeliveryResponse`
